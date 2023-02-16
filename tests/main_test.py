@@ -40,6 +40,7 @@ def env_with_refs():
         'key-0': 'value-0',
         'key-1': 'ref@main/entry-1:key-0',
         'key-2': 'ref@g_level0/g_level1/entry-2:key-100',
+        'key-3': 'ref@main/entry-3:key-1',
     }
 
 
@@ -86,11 +87,12 @@ def test_env_values_nested(entry_path, kp, env2):
         (['main', 'entry-3']),
     ],
 )
-def test_env_values_with_refs(entry_path, kp, env_with_refs):
+def test_env_values_with_refs(entry_path, kp):
     assert keepass_env.env_values(kp.filename, entry_path) == {
         'key-0': 'value-0',
         'key-1': 'value-0',
         'key-2': 'value-100',
+        'key-3': 'value-0',
     }
 
 

@@ -44,6 +44,8 @@ def load_ref(
     path, attribute = parse_ref(ref, prefix, sep, sep2)
     entry = kp.find_entries_by_path(path)
     out: str = entry.custom_properties[attribute]
+    if out.startswith(prefix):
+        return load_ref(kp, out, prefix, sep, sep2)
     return out
 
 
