@@ -28,7 +28,7 @@ key-0 value-0
 key-1 ref@group5/entry42:API_TOKEN
 ```
 
-Value for `key-1` will be loaded from another entry with path `['group5', 'entry']` and will be taken from its attribute `API_TOKEN`.
+Value for `key-1` will be loaded from another entry with path `['group5', 'entry42']` and will be taken from its attribute `API_TOKEN`.
 
 - Multiple references are supported.
 - Default format of references is prefix `ref@`, path separator `/` attribute separator `:`. This can be configured via arguments to `load_env` and `env_values`
