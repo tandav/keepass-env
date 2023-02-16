@@ -1,5 +1,5 @@
 # keepass-env
-Tool read key-value pairs from a `.kdbx` file and can set them as environment variables or return as dict.
+Read key-value pairs from a `.kdbx` file and can set them as environment variables or return as dict.
 
 `.kdbx` entries can store key-value attributes. This tool takes a path to entry and loads it's attributes.
 
