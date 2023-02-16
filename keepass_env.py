@@ -88,6 +88,7 @@ def load_env(
         transformed_key=transformed_key,
         ref_prefix=ref_prefix,
         ref_sep=ref_sep,
+        ref_sep2=ref_sep2,
     )
     for k, v in env.items():
         os.environ[k] = v
