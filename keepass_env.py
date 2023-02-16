@@ -76,8 +76,9 @@ def load_env(
     password: str | None = None,
     keyfile: str | None = None,
     transformed_key: bytes | None = None,
-    ref_prefix: str = 'ref:',
+    ref_prefix: str = 'ref@',
     ref_sep: str = '/',
+    ref_sep2: str = ':',
 ) -> None:
     env = env_values(
         filename=filename,
