@@ -1,0 +1,26 @@
+---
+kind: pipeline
+type: docker
+name: test-and-publish
+
+steps:
+- name: pytest
+  image: python:latest
+  commands:
+    - python -m pip install .[dev]
+    - pytest
+    - pre-commit run --all-files
+
+- name: pypi_publish
+  image: python:latest
+  when:
+    event: tag
+    tag: 'v\d+.\d+.d+*'
+  environment:
+    TWINE_USERNAME: __token__
+    TWINE_PASSWORD:
+      from_secret: PYPI_TOKEN
+  commands:
+    - python -m pip install --upgrade setuptools build twine
+    - python -m build .
+    - python -m twine upload dist/*
