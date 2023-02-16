@@ -3,7 +3,7 @@ from collections.abc import Sequence
 
 from pykeepass import PyKeePass
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 def validate_ref(ref: str, prefix: str, sep: str, sep2: str) -> None:
