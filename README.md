@@ -60,20 +60,31 @@ keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my
 export KEY_0=value-0
 export KEY_1=value-1
 
-
 # configuration via env variables are also available:
 KEEPASS_DB=mydb.kdbx KEEPASS_PASSWORD=secure-af KEEPASS_ENTRY_PATH=group0/subgroup1/my_entry KEEPASS_EXPORT=1
 export KEY_0=value-0
 export KEY_1=value-1
 ```
 
-This can be used to load env before running some command.
+If you do not specify `--password` argument or `KEEPASS_PASSWORD` variable, you will be asked to enter a password in the command line.
+
+
+Printing variables can be used to load them before running some command in the shell:
 
 ```shell
+eval "$(keepass-env --db my.kdbx --password 1234 --entry-path main/project-x)" python main.py
 ```
 
-
-You can put in Makefile like this:
-
+Or you can put in Makefile like this:
 ```Makefile
+.PHONY: run
+run:
+	eval "$$(keepass-env --db my.kdbx --password 1234 --entry-path main/project-x)" python main.py
+
+# another example:
+
+.PHONY: run_fastapi_app
+run_fastapi_app:
+	eval "$$(keepass-env --db my.kdbx --password 1234 --export --entry-path main/project-x)"; \
+	uvicorn server:app
 ```
