@@ -19,12 +19,12 @@ keepass_env.load_env(db_filename, entry_path, password=password)
 
 # return as dict
 keepass_env.env_values(db_filename, entry_path, password=password)
-{'key-0': 'value-0', 'key-1': 'value-1'}
+{'KEY_0': 'value-0', 'KEY_1': 'value-1'}
 
 # write env
 keepass_env.write_env(db_filename, entry_path, password=password, env={
-    'my-key-0': 'my-value-0',
-    'my-key-1': 'my-value-1',
+    'MY_KEY_0': 'my-value-0',
+    'MY_KEY_1': 'my-value-1',
 })
 ```
 
@@ -32,11 +32,11 @@ keepass_env.write_env(db_filename, entry_path, password=password, env={
 This tool supports entry references. For example some entry have following key-value attributes:
 
 ```
-key-0 value-0
-key-1 ref@group5/entry42:API_TOKEN
+KEY_0 value-0
+KEY_1 ref@group5/entry42:API_TOKEN
 ```
 
-Value for `key-1` will be loaded from another entry with path `['group5', 'entry42']` and will be taken from its attribute `API_TOKEN`.
+Value for `KEY_1` will be loaded from another entry with path `['group5', 'entry42']` and will be taken from its attribute `API_TOKEN`.
 
 - Format of references is prefix `ref@`, path separator `/` attribute separator `:`.
 - Multiple references are supported. (If referenced value is also reference and so on, it will be looked up recursively)
@@ -46,3 +46,34 @@ Value for `key-1` will be loaded from another entry with path `['group5', 'entry
     - `ref@group5/entry42:__password__`
     - `ref@group5/entry42:__url__`
 - username, password, url can also be a refernces. title can't be a reference
+
+## print to stdout
+This package comes with console script `keepass-env` (It will be accessible after pip installation).
+
+```shell
+keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my_entry
+KEY_0=value-0
+KEY_1=value-1
+
+# --export argument to print in shell format:
+keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my_entry --export
+export KEY_0=value-0
+export KEY_1=value-1
+
+
+# configuration via env variables are also available:
+KEEPASS_DB=mydb.kdbx KEEPASS_PASSWORD=secure-af KEEPASS_ENTRY_PATH=group0/subgroup1/my_entry KEEPASS_EXPORT=1
+export KEY_0=value-0
+export KEY_1=value-1
+```
+
+This can be used to load env before running some command.
+
+```shell
+```
+
+
+You can put in Makefile like this:
+
+```Makefile
+```

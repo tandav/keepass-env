@@ -1,3 +1,5 @@
+import argparse
+import getpass
 import os
 from collections.abc import Sequence
 
@@ -136,3 +138,47 @@ def write_env(
     for k, v in env.items():
         entry.set_custom_property(k, v)
     kp.save(transformed_key=kp.transformed_key)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--db', type=str, help='Path to the database file. Can be set via KEEPASS_DB env var')
+    parser.add_argument('--password', type=str, help='Database password. Can be set via KEEPASS_PASSWORD env var')
+    parser.add_argument('--export', action='store_true', help='Whether to add "export" before each line (shell format) or not (env format). Default: False. Can be set via KEEPASS_EXPORT env var')
+    parser.add_argument('--entry-path', type=str, help='Entry path. Can be set via KEEPASS_ENTRY_PATH env var. Example: "group1/group2/entry"')
+    args = parser.parse_args()
+
+    if args.db is None:
+        args.db = os.environ.get('KEEPASS_DB')
+    if args.db is None:
+        raise ValueError('Database not specified. Use --db or KEEPASS_DB env var')
+
+    if args.password is None:
+        args.password = os.environ.get('KEEPASS_PASSWORD')
+    if args.password is None:
+        args.password = getpass.getpass()
+
+    if args.entry_path is None:
+        args.entry_path = os.environ.get('KEEPASS_ENTRY_PATH')
+    if args.entry_path is None:
+        raise ValueError('Entry path not specified. Use --entry-path or KEEPASS_ENTRY_PATH env var. Example: "group1/group2/entry"')
+    args.entry_path = args.entry_path.split('/')
+
+    args.export = args.export or 'KEEPASS_EXPORT' in os.environ
+
+    return args
+
+
+def print_env() -> None:
+    args = parse_args()
+
+    env = env_values(
+        filename=args.db,
+        password=args.password,
+        entry_path=args.entry_path,
+    )
+    for k, v in env.items():
+        if args.export:
+            print(f'export {k}={v}')
+        else:
+            print(f'{k}={v}')
