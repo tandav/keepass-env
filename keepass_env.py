@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from pykeepass import PyKeePass
 from pykeepass.entry import Entry
 
-__version__ = '0.0.7'
+__version__ = '0.1.0'
 
 REF_PREFIX = 'ref@'
 REF_SEP = '/'
