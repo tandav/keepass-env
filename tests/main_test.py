@@ -6,6 +6,8 @@ import pytest
 
 import keepass_env
 
+PASSWORD = 'secure-af'
+
 
 @pytest.mark.parametrize(
     'entry_path', [
@@ -23,11 +25,13 @@ def test_create_entry(entry_path):
 
 def test_write_env():
     with tempfile.NamedTemporaryFile() as f:
-        kp = pykeepass.create_database(f.name)
+        kp = pykeepass.create_database(f.name, password=PASSWORD)
+        kp.reload()
         keepass_env.write_env(
             filename=f.name,
             entry_path=['test'],
             env={'key': 'value'},
+            transformed_key=kp.transformed_key,
         )
         kp.reload()
         assert kp.find_entries_by_path(['test']) is not None
@@ -46,6 +50,19 @@ def test_write_env_create_if_not_exists():
             )
 
 
+def test_unencrypt_with_password():
+    with tempfile.NamedTemporaryFile() as f:
+        pykeepass.create_database(f.name, password=PASSWORD)
+        pykeepass.PyKeePass(f.name, password=PASSWORD)
+
+
+def test_unencrypt_with_transformed_key():
+    with tempfile.NamedTemporaryFile() as f:
+        kp = pykeepass.create_database(f.name, password=PASSWORD)
+        kp.reload()  # reload to get transformed_key (or it will be default and equal between databases)
+        pykeepass.PyKeePass(f.name, transformed_key=kp.transformed_key)
+
+
 @pytest.fixture(scope='session')
 def env():
     return {f'key-{i}': f'value-{i}' for i in range(10)}
@@ -59,15 +76,16 @@ def env2():
 @pytest.fixture(scope='session')
 def kp(env, env2):
     with tempfile.NamedTemporaryFile() as f:
-        kp = pykeepass.create_database(f.name)
+        kp = pykeepass.create_database(f.name, password=PASSWORD)
+        kp.reload()
         kp.add_group(kp.root_group, 'main')
         g_level0 = kp.add_group(kp.root_group, 'g_level0')
         kp.add_group(g_level0, 'g_level1')
         kp.add_entry(g_level0, 'title-1', username='username-1', password='password-1', url='url-1')
         kp.add_entry(g_level0, 'title-2', username='ref@main/entry-1:key-0', password='ref@main/entry-1:key-0', url='ref@main/entry-1:key-0')
-        kp.save()
-        keepass_env.write_env(f.name, ['main', 'entry-1'], env)
-        keepass_env.write_env(f.name, ['g_level0', 'g_level1', 'entry-2'], env2)
+        kp.save(transformed_key=kp.transformed_key)
+        keepass_env.write_env(f.name, ['main', 'entry-1'], env, transformed_key=kp.transformed_key)
+        keepass_env.write_env(f.name, ['g_level0', 'g_level1', 'entry-2'], env2, transformed_key=kp.transformed_key)
         keepass_env.write_env(
             f.name, ['main', 'entry-3'], {
                 'key-0': 'value-0',
@@ -75,16 +93,19 @@ def kp(env, env2):
                 'key-2': 'ref@g_level0/g_level1/entry-2:key-100',
                 'key-3': 'ref@main/entry-3:key-1',
             },
+            transformed_key=kp.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-4'], {
                 'key-0': 'ref@main/non-existing-entry:key',
             },
+            transformed_key=kp.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-5'], {
                 'key-0': 'ref@main/entry-4:non-existing-attribute',
             },
+            transformed_key=kp.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-6'], {
@@ -93,6 +114,7 @@ def kp(env, env2):
                 'key-2': 'ref@g_level0/title-1:__password__',
                 'key-3': 'ref@g_level0/title-1:__url__',
             },
+            transformed_key=kp.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-7'], {
@@ -101,6 +123,7 @@ def kp(env, env2):
                 'key-2': 'ref@g_level0/title-2:__password__',
                 'key-3': 'ref@g_level0/title-2:__url__',
             },
+            transformed_key=kp.transformed_key,
         )
         kp.reload()
         yield kp
@@ -112,7 +135,7 @@ def kp(env, env2):
     ],
 )
 def test_env_values(entry_path, kp, env):
-    assert keepass_env.env_values(kp.filename, entry_path) == env
+    assert keepass_env.env_values(kp.filename, entry_path, transformed_key=kp.transformed_key) == env
 
 
 @pytest.mark.parametrize(
@@ -121,7 +144,7 @@ def test_env_values(entry_path, kp, env):
     ],
 )
 def test_env_values_nested(entry_path, kp, env2):
-    assert keepass_env.env_values(kp.filename, entry_path) == env2
+    assert keepass_env.env_values(kp.filename, entry_path, transformed_key=kp.transformed_key) == env2
 
 
 @pytest.mark.parametrize(
@@ -153,7 +176,7 @@ def test_env_values_nested(entry_path, kp, env2):
     ],
 )
 def test_refs(entry_path, expected, kp):
-    assert keepass_env.env_values(kp.filename, entry_path) == expected
+    assert keepass_env.env_values(kp.filename, entry_path, transformed_key=kp.transformed_key) == expected
 
 
 @pytest.mark.parametrize(
@@ -162,7 +185,7 @@ def test_refs(entry_path, expected, kp):
     ],
 )
 def test_load_env(entry_path, kp, env):
-    keepass_env.load_env(kp.filename, entry_path)
+    keepass_env.load_env(kp.filename, entry_path, transformed_key=kp.transformed_key)
     for k, v in env.items():
         assert os.environ[k] == v
 
@@ -189,9 +212,9 @@ def test_validate_ref(ref):
 )
 def test_entry_not_found(kp, entry_path):
     with pytest.raises(KeyError):
-        keepass_env.env_values(kp.filename, entry_path)
+        keepass_env.env_values(kp.filename, entry_path, transformed_key=kp.transformed_key)
 
 
 def test_attribute_not_found(kp):
     with pytest.raises(KeyError):
-        keepass_env.env_values(kp.filename, ['main', 'entry-5'])
+        keepass_env.env_values(kp.filename, ['main', 'entry-5'], transformed_key=kp.transformed_key)

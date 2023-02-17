@@ -135,4 +135,4 @@ def write_env(
             raise KeyError(f'Entry {entry_path!r} not found')
     for k, v in env.items():
         entry.set_custom_property(k, v)
-    kp.save()
+    kp.save(transformed_key=kp.transformed_key)
