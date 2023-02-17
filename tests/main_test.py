@@ -3,25 +3,47 @@ import tempfile
 
 import pykeepass
 import pytest
-from pykeepass import PyKeePass
-from pykeepass.group import Group
 
 import keepass_env
 
-TEST_VALUE = 'test-value'
+
+@pytest.mark.parametrize(
+    'entry_path', [
+        ['entry_title'],
+        ['group0', 'entry_title'],
+        ['group0', 'group1', 'group2', 'entry_title'],
+    ],
+)
+def test_create_entry(entry_path):
+    with tempfile.NamedTemporaryFile() as f:
+        kp = pykeepass.create_database(f.name)
+        e = keepass_env._create_entry(kp, entry_path)
+        assert kp.find_entries_by_path(entry_path) == e
 
 
-def _add_entry_with_attributes(
-    kp: PyKeePass,
-    group: Group,
-    title: str,
-    username: str,
-    password: str,
-    kv: dict[str, str],
-) -> None:
-    entry = kp.add_entry(group, title, username, password)
-    for k, v in kv.items():
-        entry.set_custom_property(k, v)
+def test_write_env():
+    with tempfile.NamedTemporaryFile() as f:
+        kp = pykeepass.create_database(f.name)
+        keepass_env.write_env(
+            filename=f.name,
+            entry_path=['test'],
+            env={'key': 'value'},
+        )
+        kp.reload()
+        assert kp.find_entries_by_path(['test']) is not None
+        assert kp.find_entries_by_path(['test']).custom_properties == {'key': 'value'}
+
+
+def test_write_env_create_if_not_exists():
+    with tempfile.NamedTemporaryFile() as f:
+        pykeepass.create_database(f.name)
+        with pytest.raises(KeyError):
+            keepass_env.write_env(
+                filename=f.name,
+                entry_path=['test3'],
+                env={'key': 'value'},
+                create_if_not_exists=False,
+            )
 
 
 @pytest.fixture(scope='session')
@@ -38,34 +60,31 @@ def env2():
 def kp(env, env2):
     with tempfile.NamedTemporaryFile() as f:
         kp = pykeepass.create_database(f.name)
-        g_main = kp.add_group(kp.root_group, 'main')
+        kp.add_group(kp.root_group, 'main')
         g_level0 = kp.add_group(kp.root_group, 'g_level0')
-        g_level1 = kp.add_group(g_level0, 'g_level1')
-        _add_entry_with_attributes(
-            kp, g_main, 'entry-1', TEST_VALUE, TEST_VALUE, env,
-        )
-        _add_entry_with_attributes(
-            kp, g_level1, 'entry-2', TEST_VALUE, TEST_VALUE, env2,
-        )
-        _add_entry_with_attributes(
-            kp, g_main, 'entry-3', TEST_VALUE, TEST_VALUE, {
+        kp.add_group(g_level0, 'g_level1')
+        kp.save()
+        keepass_env.write_env(f.name, ['main', 'entry-1'], env)
+        keepass_env.write_env(f.name, ['g_level0', 'g_level1', 'entry-2'], env2)
+        keepass_env.write_env(
+            f.name, ['main', 'entry-3'], {
                 'key-0': 'value-0',
                 'key-1': 'ref@main/entry-1:key-0',
                 'key-2': 'ref@g_level0/g_level1/entry-2:key-100',
                 'key-3': 'ref@main/entry-3:key-1',
             },
         )
-        _add_entry_with_attributes(
-            kp, g_main, 'entry-4', TEST_VALUE, TEST_VALUE, {
+        keepass_env.write_env(
+            f.name, ['main', 'entry-4'], {
                 'key-0': 'ref@main/non-existing-entry:key',
             },
         )
-        _add_entry_with_attributes(
-            kp, g_main, 'entry-5', TEST_VALUE, TEST_VALUE, {
+        keepass_env.write_env(
+            f.name, ['main', 'entry-5'], {
                 'key-0': 'ref@main/entry-4:non-existing-attribute',
             },
         )
-        kp.save()
+        kp.reload()
         yield kp
 
 

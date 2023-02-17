@@ -2,6 +2,7 @@ import os
 from collections.abc import Sequence
 
 from pykeepass import PyKeePass
+from pykeepass.entry import Entry
 
 __version__ = '0.0.7'
 
@@ -80,3 +81,43 @@ def load_env(
     )
     for k, v in env.items():
         os.environ[k] = v
+
+
+def _create_entry(kp: PyKeePass, entry_path: Sequence[str]) -> Entry | None:
+    entry = kp.find_entries_by_path(entry_path)
+    if entry is not None:
+        return None
+    *groups, entry_title = entry_path
+    if not groups:
+        group = kp.root_group
+    else:
+        for i in range(len(groups)):
+            group = kp.find_groups_by_path(groups[:i + 1])
+            if group is None:
+                if i == 0:
+                    destination_group = kp.root_group
+                else:
+                    destination_group = kp.find_groups_by_path(groups[:i])
+                group = kp.add_group(destination_group, groups[i])
+    return kp.add_entry(group, title=entry_title, username='', password='')
+
+
+def write_env(
+    filename: str,
+    entry_path: Sequence[str],
+    env: dict[str, str],
+    password: str | None = None,
+    keyfile: str | None = None,
+    transformed_key: bytes | None = None,
+    create_if_not_exists: bool = True,
+) -> None:
+    kp = PyKeePass(filename, password, keyfile, transformed_key)
+    entry = kp.find_entries_by_path(entry_path)
+    if entry is None:
+        if create_if_not_exists:
+            entry = _create_entry(kp, entry_path)
+        else:
+            raise KeyError(f'Entry {entry_path!r} not found')
+    for k, v in env.items():
+        entry.set_custom_property(k, v)
+    kp.save()
