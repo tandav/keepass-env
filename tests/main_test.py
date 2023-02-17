@@ -123,7 +123,7 @@ def test_load_env(entry_path, kp, env):
 )
 def test_validate_ref(ref):
     with pytest.raises(ValueError):
-        keepass_env.validate_ref(ref, prefix='ref@', sep='/', sep2=':')
+        keepass_env.validate_ref(ref)
 
 
 @pytest.mark.parametrize(
