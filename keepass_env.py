@@ -43,6 +43,8 @@ def load_ref(
 ) -> str:
     path, attribute = parse_ref(ref, prefix, sep, sep2)
     entry = kp.find_entries_by_path(path)
+    if entry is None:
+        raise KeyError(f'Entry {path!r} not found')
     out: str = entry.custom_properties[attribute]
     if out.startswith(prefix):
         return load_ref(kp, out, prefix, sep, sep2)
@@ -61,6 +63,8 @@ def env_values(
 ) -> dict[str, str]:
     kp = PyKeePass(filename, password, keyfile, transformed_key)
     entry = kp.find_entries_by_path(entry_path)
+    if entry is None:
+        raise KeyError(f'Entry {entry_path!r} not found')
     kv = entry.custom_properties
     env = {}
     for k, v in kv.items():

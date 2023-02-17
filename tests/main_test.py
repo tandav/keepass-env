@@ -35,17 +35,7 @@ def env2():
 
 
 @pytest.fixture(scope='session')
-def env_with_refs():
-    return {
-        'key-0': 'value-0',
-        'key-1': 'ref@main/entry-1:key-0',
-        'key-2': 'ref@g_level0/g_level1/entry-2:key-100',
-        'key-3': 'ref@main/entry-3:key-1',
-    }
-
-
-@pytest.fixture(scope='session')
-def kp(env, env2, env_with_refs):
+def kp(env, env2):
     with tempfile.NamedTemporaryFile() as f:
         kp = pykeepass.create_database(f.name)
         g_main = kp.add_group(kp.root_group, 'main')
@@ -58,7 +48,22 @@ def kp(env, env2, env_with_refs):
             kp, g_level1, 'entry-2', TEST_VALUE, TEST_VALUE, env2,
         )
         _add_entry_with_attributes(
-            kp, g_main, 'entry-3', TEST_VALUE, TEST_VALUE, env_with_refs,
+            kp, g_main, 'entry-3', TEST_VALUE, TEST_VALUE, {
+                'key-0': 'value-0',
+                'key-1': 'ref@main/entry-1:key-0',
+                'key-2': 'ref@g_level0/g_level1/entry-2:key-100',
+                'key-3': 'ref@main/entry-3:key-1',
+            },
+        )
+        _add_entry_with_attributes(
+            kp, g_main, 'entry-4', TEST_VALUE, TEST_VALUE, {
+                'key-0': 'ref@main/non-existing-entry:key',
+            },
+        )
+        _add_entry_with_attributes(
+            kp, g_main, 'entry-5', TEST_VALUE, TEST_VALUE, {
+                'key-0': 'ref@main/entry-4:non-existing-attribute',
+            },
         )
         kp.save()
         yield kp
@@ -119,3 +124,19 @@ def test_load_env(entry_path, kp, env):
 def test_validate_ref(ref):
     with pytest.raises(ValueError):
         keepass_env.validate_ref(ref, prefix='ref@', sep='/', sep2=':')
+
+
+@pytest.mark.parametrize(
+    'entry_path', [
+        (['main', 'non-existing-entry']),
+        (['main', 'entry-4']),
+    ],
+)
+def test_entry_not_found(kp, entry_path):
+    with pytest.raises(KeyError):
+        keepass_env.env_values(kp.filename, entry_path)
+
+
+def test_attribute_not_found(kp):
+    with pytest.raises(KeyError):
+        keepass_env.env_values(kp.filename, ['main', 'entry-5'])
