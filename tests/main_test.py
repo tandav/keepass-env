@@ -63,6 +63,8 @@ def kp(env, env2):
         kp.add_group(kp.root_group, 'main')
         g_level0 = kp.add_group(kp.root_group, 'g_level0')
         kp.add_group(g_level0, 'g_level1')
+        kp.add_entry(g_level0, 'title-1', username='username-1', password='password-1', url='url-1')
+        kp.add_entry(g_level0, 'title-2', username='ref@main/entry-1:key-0', password='ref@main/entry-1:key-0', url='ref@main/entry-1:key-0')
         kp.save()
         keepass_env.write_env(f.name, ['main', 'entry-1'], env)
         keepass_env.write_env(f.name, ['g_level0', 'g_level1', 'entry-2'], env2)
@@ -82,6 +84,22 @@ def kp(env, env2):
         keepass_env.write_env(
             f.name, ['main', 'entry-5'], {
                 'key-0': 'ref@main/entry-4:non-existing-attribute',
+            },
+        )
+        keepass_env.write_env(
+            f.name, ['main', 'entry-6'], {
+                'key-0': 'ref@g_level0/title-1:__title__',
+                'key-1': 'ref@g_level0/title-1:__username__',
+                'key-2': 'ref@g_level0/title-1:__password__',
+                'key-3': 'ref@g_level0/title-1:__url__',
+            },
+        )
+        keepass_env.write_env(
+            f.name, ['main', 'entry-7'], {
+                'key-0': 'ref@g_level0/title-2:__title__',
+                'key-1': 'ref@g_level0/title-2:__username__',
+                'key-2': 'ref@g_level0/title-2:__password__',
+                'key-3': 'ref@g_level0/title-2:__url__',
             },
         )
         kp.reload()
@@ -107,17 +125,35 @@ def test_env_values_nested(entry_path, kp, env2):
 
 
 @pytest.mark.parametrize(
-    'entry_path', [
-        (['main', 'entry-3']),
+    'entry_path, expected', [
+        (
+            ['main', 'entry-3'], {
+                'key-0': 'value-0',
+                'key-1': 'value-0',
+                'key-2': 'value-100',
+                'key-3': 'value-0',
+            },
+        ),
+        (
+            ['main', 'entry-6'], {
+                'key-0': 'title-1',
+                'key-1': 'username-1',
+                'key-2': 'password-1',
+                'key-3': 'url-1',
+            },
+        ),
+        (
+            ['main', 'entry-7'], {
+                'key-0': 'title-2',
+                'key-1': 'value-0',
+                'key-2': 'value-0',
+                'key-3': 'value-0',
+            },
+        ),
     ],
 )
-def test_env_values_with_refs(entry_path, kp):
-    assert keepass_env.env_values(kp.filename, entry_path) == {
-        'key-0': 'value-0',
-        'key-1': 'value-0',
-        'key-2': 'value-100',
-        'key-3': 'value-0',
-    }
+def test_refs(entry_path, expected, kp):
+    assert keepass_env.env_values(kp.filename, entry_path) == expected
 
 
 @pytest.mark.parametrize(

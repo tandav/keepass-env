@@ -9,6 +9,10 @@ __version__ = '0.0.7'
 REF_PREFIX = 'ref@'
 REF_SEP = '/'
 REF_SEP2 = ':'
+ATTR_TITLE = '__title__'
+ATTR_USERNAME = '__username__'
+ATTR_PASSWORD = '__password__'
+ATTR_URL = '__url__'
 
 
 def validate_ref(ref: str) -> None:
@@ -39,8 +43,19 @@ def load_ref(kp: PyKeePass, ref: str) -> str:
     entry = kp.find_entries_by_path(path)
     if entry is None:
         raise KeyError(f'Entry {path!r} not found')
-    out: str = entry.custom_properties[attribute]
+    if attribute == ATTR_TITLE:
+        out: str = entry.title
+    elif attribute == ATTR_USERNAME:
+        out = entry.username
+    elif attribute == ATTR_PASSWORD:
+        out = entry.password
+    elif attribute == ATTR_URL:
+        out = entry.url
+    else:
+        out = entry.custom_properties[attribute]
     if out.startswith(REF_PREFIX):
+        if attribute == ATTR_TITLE:
+            raise ValueError(f'Invalid ref: {ref}, title cannot be a ref')
         return load_ref(kp, out)
     return out
 
