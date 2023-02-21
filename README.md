@@ -55,13 +55,17 @@ keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my
 KEY_0=value-0
 KEY_1=value-1
 
-# --export argument to print in shell format:
-keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my_entry --export
+# to print in shell format, use --format shell
+keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my_entry --format shell
 export KEY_0=value-0
 export KEY_1=value-1
 
+# --format docker
+keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my_entry --format docker
+-e KEY_0=value-0 -e KEY_1=value-1
+
 # configuration via env variables are also available:
-KEEPASS_DB=mydb.kdbx KEEPASS_PASSWORD=secure-af KEEPASS_ENTRY_PATH=group0/subgroup1/my_entry KEEPASS_EXPORT=1
+KEEPASS_DB=mydb.kdbx KEEPASS_PASSWORD=secure-af KEEPASS_ENTRY_PATH=group0/subgroup1/my_entry KEEPASS_FORMAT=shell
 export KEY_0=value-0
 export KEY_1=value-1
 ```
@@ -85,6 +89,6 @@ run:
 
 .PHONY: run_fastapi_app
 run_fastapi_app:
-	eval "$$(keepass-env --db my.kdbx --password 1234 --export --entry-path main/project-x)"; \
+	eval "$$(keepass-env --db my.kdbx --password 1234 --format shell --entry-path main/project-x)"; \
 	uvicorn server:app
 ```

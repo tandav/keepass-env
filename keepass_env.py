@@ -144,7 +144,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', type=str, help='Path to the database file. Can be set via KEEPASS_DB env var')
     parser.add_argument('--password', type=str, help='Database password. Can be set via KEEPASS_PASSWORD env var')
-    parser.add_argument('--export', action='store_true', help='Whether to add "export" before each line (shell format) or not (env format). Default: False. Can be set via KEEPASS_EXPORT env var')
+    parser.add_argument('--format', type=str, help='print format, possible options: env, shell, docker. Can be set via KEEPASS_FORMAT env var')
     parser.add_argument('--entry-path', type=str, help='Entry path. Can be set via KEEPASS_ENTRY_PATH env var. Example: "group1/group2/entry"')
     args = parser.parse_args()
 
@@ -164,7 +164,10 @@ def parse_args() -> argparse.Namespace:
         raise ValueError('Entry path not specified. Use --entry-path or KEEPASS_ENTRY_PATH env var. Example: "group1/group2/entry"')
     args.entry_path = args.entry_path.split('/')
 
-    args.export = args.export or 'KEEPASS_EXPORT' in os.environ
+    if args.format is None:
+        args.format = os.environ.get('KEEPASS_FORMAT', 'env')
+    if args.format not in ('env', 'shell', 'docker'):
+        raise ValueError(f'Invalid format: {args.format!r}. Possible options: env, shell, docker')
 
     return args
 
@@ -178,7 +181,12 @@ def print_env() -> None:
         entry_path=args.entry_path,
     )
     for k, v in env.items():
-        if args.export:
+
+        if args.format == 'env':
+            print(f'{k}={v}')
+        elif args.format == 'docker':
+            print(f'-e {k}={v}', end=' ')
+        elif args.format == 'shell':
             print(f'export {k}={v}')
         else:
-            print(f'{k}={v}')
+            raise ValueError(f'Invalid format: {args.format!r}')
