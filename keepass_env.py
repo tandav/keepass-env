@@ -77,8 +77,9 @@ def env_values(
     env = {}
     for k, v in kv.items():
         if v.startswith(REF_PREFIX):
-            v = load_ref(kp, v)
-        env[k] = v
+            env[k] = load_ref(kp, v)
+        else:
+            env[k] = v
     return env
 
 
@@ -108,7 +109,7 @@ def _create_entry(kp: PyKeePass, entry_path: Sequence[str]) -> Entry | None:
     if not groups:
         group = kp.root_group
     else:
-        for i in range(len(groups)):
+        for i, _ in enumerate(groups):
             group = kp.find_groups_by_path(groups[:i + 1])
             if group is None:
                 if i == 0:
