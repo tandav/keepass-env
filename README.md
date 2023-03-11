@@ -1,3 +1,7 @@
+[![PyPI version](https://img.shields.io/pypi/v/keepass-env.svg?logo=pypi&logoColor=FFE873)](https://pypi.org/project/keepass-env/)
+
+[docs](https://tandav.github.io/keepass-env)
+
 # keepass-env
 Read key-value pairs from `.kdbx` file and set them as environment variables or return as dict. `.kdbx` entries can store key-value attributes. This tool takes a path to entry and loads it's attributes.
 
