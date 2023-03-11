@@ -22,18 +22,18 @@ def env2():
 
 
 @pytest.fixture(scope='session')
-def kp(PASSWORD, env, env2):
+def kp(PASSWORD, env, env2):  # pylint: disable=W0621
     with tempfile.NamedTemporaryFile() as f:
-        kp = pykeepass.create_database(f.name, password=PASSWORD)
-        kp.reload()
-        kp.add_group(kp.root_group, 'main')
-        g_level0 = kp.add_group(kp.root_group, 'g_level0')
-        kp.add_group(g_level0, 'g_level1')
-        kp.add_entry(g_level0, 'title-1', username='username-1', password='password-1', url='url-1')
-        kp.add_entry(g_level0, 'title-2', username='ref@main/entry-1:key-0', password='ref@main/entry-1:key-0', url='ref@main/entry-1:key-0')
-        kp.save(transformed_key=kp.transformed_key)
-        keepass_env.write_env(f.name, ['main', 'entry-1'], env, transformed_key=kp.transformed_key)
-        keepass_env.write_env(f.name, ['g_level0', 'g_level1', 'entry-2'], env2, transformed_key=kp.transformed_key)
+        k = pykeepass.create_database(f.name, password=PASSWORD)
+        k.reload()
+        k.add_group(k.root_group, 'main')
+        g_level0 = k.add_group(k.root_group, 'g_level0')
+        k.add_group(g_level0, 'g_level1')
+        k.add_entry(g_level0, 'title-1', username='username-1', password='password-1', url='url-1')
+        k.add_entry(g_level0, 'title-2', username='ref@main/entry-1:key-0', password='ref@main/entry-1:key-0', url='ref@main/entry-1:key-0')
+        k.save(transformed_key=k.transformed_key)
+        keepass_env.write_env(f.name, ['main', 'entry-1'], env, transformed_key=k.transformed_key)
+        keepass_env.write_env(f.name, ['g_level0', 'g_level1', 'entry-2'], env2, transformed_key=k.transformed_key)
         keepass_env.write_env(
             f.name, ['main', 'entry-3'], {
                 'key-0': 'value-0',
@@ -41,19 +41,19 @@ def kp(PASSWORD, env, env2):
                 'key-2': 'ref@g_level0/g_level1/entry-2:key-100',
                 'key-3': 'ref@main/entry-3:key-1',
             },
-            transformed_key=kp.transformed_key,
+            transformed_key=k.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-4'], {
                 'key-0': 'ref@main/non-existing-entry:key',
             },
-            transformed_key=kp.transformed_key,
+            transformed_key=k.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-5'], {
                 'key-0': 'ref@main/entry-4:non-existing-attribute',
             },
-            transformed_key=kp.transformed_key,
+            transformed_key=k.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-6'], {
@@ -62,7 +62,7 @@ def kp(PASSWORD, env, env2):
                 'key-2': 'ref@g_level0/title-1:__password__',
                 'key-3': 'ref@g_level0/title-1:__url__',
             },
-            transformed_key=kp.transformed_key,
+            transformed_key=k.transformed_key,
         )
         keepass_env.write_env(
             f.name, ['main', 'entry-7'], {
@@ -71,7 +71,7 @@ def kp(PASSWORD, env, env2):
                 'key-2': 'ref@g_level0/title-2:__password__',
                 'key-3': 'ref@g_level0/title-2:__url__',
             },
-            transformed_key=kp.transformed_key,
+            transformed_key=k.transformed_key,
         )
-        kp.reload()
-        yield kp
+        k.reload()
+        yield k

@@ -30,5 +30,5 @@ def test_validate_ref(ref):
 def test_create_entry(entry_path):
     with tempfile.NamedTemporaryFile() as f:
         kp = pykeepass.create_database(f.name)
-        e = keepass_env._create_entry(kp, entry_path)
+        e = keepass_env._create_entry(kp, entry_path) # pylint: disable=W0212
         assert kp.find_entries_by_path(entry_path) == e
