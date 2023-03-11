@@ -22,10 +22,10 @@ dev = [
 ]
 
 [project.urls]
-source = "https://github.com/tandav/pipe21"
-docs = "https://tandav.github.io/pipe21/"
-issues = "https://github.com/tandav/pipe21/issues"
-"release notes" = "https://github.com/tandav/pipe21/releases"
+source = "https://github.com/tandav/keepass-env"
+docs = "https://tandav.github.io/keepass-env/"
+issues = "https://github.com/tandav/keepass-env/issues"
+"release notes" = "https://github.com/tandav/keepass-env/releases"
 
 
 [project.scripts]
