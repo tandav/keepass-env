@@ -52,7 +52,7 @@ Value for `KEY_1` will be loaded from another entry with path `['group5', 'entry
 - username, password, url can also be a refernces. title can't be a reference
 
 ## print to stdout
-This package comes with console script `keepass-env` (It will be accessible after pip installation).
+This package comes with console script `keepass-env` (It will be available after pip installation).
 
 ```shell
 keepass-env --db mydb.kdbx --password secure-af --entry-path group0/subgroup1/my_entry
