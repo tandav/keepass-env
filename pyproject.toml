@@ -107,14 +107,7 @@ extend-select = [
 ]
 ignore = [
     "E501",  # line too long
-    "E731",
-    "E701",
-    "E702",
-    "F403", # star imports
-    "F405", # star imports
-    "B008",
     "PLR0913",
-    "TCH003",
     "S105",
     "S106",
 ]
@@ -130,12 +123,12 @@ force-single-line = true
 
 [tool.pylint.messages-control]
 disable = [
-    "C0116",
-    "C0301",
-    "C0103",
-    "C0114",
-    "E0401",
-    "R0913",
+    "line-too-long",
+    "invalid-name",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "import-error",
+    "too-many-arguments",
 ]
 
 # ==============================================================================
