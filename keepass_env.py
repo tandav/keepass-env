@@ -40,105 +40,94 @@ def parse_ref(ref: str) -> tuple[list[str], str]:
     return path, attribute
 
 
-def load_ref(kp: PyKeePass, ref: str) -> str:
-    path, attribute = parse_ref(ref)
-    entry = kp.find_entries_by_path(path)
-    if entry is None:
-        raise KeyError(f'Entry {path!r} not found')
-    if attribute == ATTR_TITLE:
-        out: str = entry.title
-    elif attribute == ATTR_USERNAME:
-        out = entry.username
-    elif attribute == ATTR_PASSWORD:
-        out = entry.password
-    elif attribute == ATTR_URL:
-        out = entry.url
-    else:
-        out = entry.custom_properties[attribute]
-    if out.startswith(REF_PREFIX):
+class KeepassEnv:
+    def __init__(
+        self,
+        filename: str,
+        password: str | None = None,
+        keyfile: str | None = None,
+        transformed_key: bytes | None = None,
+    ) -> None:
+        self.kp = PyKeePass(filename, password, keyfile, transformed_key)
+
+    def load_ref(self, ref: str) -> str:
+        path, attribute = parse_ref(ref)
+        entry = self.kp.find_entries_by_path(path)
+        if entry is None:
+            raise KeyError(f'Entry {path!r} not found')
         if attribute == ATTR_TITLE:
-            raise ValueError(f'Invalid ref: {ref}, title cannot be a ref')
-        return load_ref(kp, out)
-    return out
-
-
-def env_values(
-    filename: str,
-    entry_path: Sequence[str],
-    password: str | None = None,
-    keyfile: str | None = None,
-    transformed_key: bytes | None = None,
-) -> dict[str, str]:
-    kp = PyKeePass(filename, password, keyfile, transformed_key)
-    entry = kp.find_entries_by_path(entry_path)
-    if entry is None:
-        raise KeyError(f'Entry {entry_path!r} not found')
-    kv = entry.custom_properties
-    env = {}
-    for k, v in kv.items():
-        if v.startswith(REF_PREFIX):
-            env[k] = load_ref(kp, v)
+            out: str = entry.title
+        elif attribute == ATTR_USERNAME:
+            out = entry.username
+        elif attribute == ATTR_PASSWORD:
+            out = entry.password
+        elif attribute == ATTR_URL:
+            out = entry.url
         else:
-            env[k] = v
-    return env
+            out = entry.custom_properties[attribute]
+        if out.startswith(REF_PREFIX):
+            if attribute == ATTR_TITLE:
+                raise ValueError(f'Invalid ref: {ref}, title cannot be a ref')
+            return self.load_ref(out)
+        return out
 
-
-def load_env(
-    filename: str,
-    entry_path: Sequence[str],
-    password: str | None = None,
-    keyfile: str | None = None,
-    transformed_key: bytes | None = None,
-) -> None:
-    env = env_values(
-        filename=filename,
-        entry_path=entry_path,
-        password=password,
-        keyfile=keyfile,
-        transformed_key=transformed_key,
-    )
-    for k, v in env.items():
-        os.environ[k] = v
-
-
-def _create_entry(kp: PyKeePass, entry_path: Sequence[str]) -> Entry | None:
-    entry = kp.find_entries_by_path(entry_path)
-    if entry is not None:
-        return None
-    *groups, entry_title = entry_path
-    if not groups:
-        group = kp.root_group
-    else:
-        for i, _ in enumerate(groups):
-            group = kp.find_groups_by_path(groups[:i + 1])
-            if group is None:
-                if i == 0:
-                    destination_group = kp.root_group
-                else:
-                    destination_group = kp.find_groups_by_path(groups[:i])
-                group = kp.add_group(destination_group, groups[i])
-    return kp.add_entry(group, title=entry_title, username='', password='')
-
-
-def write_env(
-    filename: str,
-    entry_path: Sequence[str],
-    env: dict[str, str],
-    password: str | None = None,
-    keyfile: str | None = None,
-    transformed_key: bytes | None = None,
-    create_if_not_exists: bool = True,
-) -> None:
-    kp = PyKeePass(filename, password, keyfile, transformed_key)
-    entry = kp.find_entries_by_path(entry_path)
-    if entry is None:
-        if create_if_not_exists:
-            entry = _create_entry(kp, entry_path)
-        else:
+    def env_values(
+        self,
+        entry_path: Sequence[str],
+    ) -> dict[str, str]:
+        entry = self.kp.find_entries_by_path(entry_path)
+        if entry is None:
             raise KeyError(f'Entry {entry_path!r} not found')
-    for k, v in env.items():
-        entry.set_custom_property(k, v)
-    kp.save(transformed_key=kp.transformed_key)
+        kv = entry.custom_properties
+        env = {}
+        for k, v in kv.items():
+            if v.startswith(REF_PREFIX):
+                env[k] = self.load_ref(kp, v)
+            else:
+                env[k] = v
+        return env
+
+    def load_env(
+        self,
+        entry_path: Sequence[str],
+    ) -> None:
+        env = self.env_values(entry_path=entry_path)
+        for k, v in env.items():
+            os.environ[k] = v
+
+    def _create_entry(self, entry_path: Sequence[str]) -> Entry | None:
+        entry = self.kp.find_entries_by_path(entry_path)
+        if entry is not None:
+            return None
+        *groups, entry_title = entry_path
+        if not groups:
+            group = self.kp.root_group
+        else:
+            for i, _ in enumerate(groups):
+                group = self.kp.find_groups_by_path(groups[:i + 1])
+                if group is None:
+                    if i == 0:
+                        destination_group = self.kp.root_group
+                    else:
+                        destination_group = self.kp.find_groups_by_path(groups[:i])
+                    group = self.kp.add_group(destination_group, groups[i])
+        return self.kp.add_entry(group, title=entry_title, username='', password='')
+
+    def write_env(
+        self,
+        entry_path: Sequence[str],
+        env: dict[str, str],
+        create_if_not_exists: bool = True,
+    ) -> None:
+        entry = self.kp.find_entries_by_path(entry_path)
+        if entry is None:
+            if create_if_not_exists:
+                entry = self._create_entry(entry_path)
+            else:
+                raise KeyError(f'Entry {entry_path!r} not found')
+        for k, v in env.items():
+            entry.set_custom_property(k, v)
+        self.kp.save(transformed_key=self.kp.transformed_key)
 
 
 def parse_args() -> argparse.Namespace:
@@ -175,14 +164,9 @@ def parse_args() -> argparse.Namespace:
 
 def print_env() -> None:
     args = parse_args()
-
-    env = env_values(
-        filename=args.db,
-        password=args.password,
-        entry_path=args.entry_path,
-    )
+    ke = KeepassEnv(filename=args.db, password=args.password)
+    env = ke.env_values(args.entry_path)
     for k, v in env.items():
-
         if args.format == 'env':
             print(f'{k}={v}')
         elif args.format == 'docker':
